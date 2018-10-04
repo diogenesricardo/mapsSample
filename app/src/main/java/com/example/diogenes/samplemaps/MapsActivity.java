@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -53,9 +54,21 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
                 .build();
 
         CameraUpdate update = CameraUpdateFactory.newCameraPosition(position);
+//        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(fafica,18);
 
-        // Centraliza o mapa com animação de 10 segundos
+        // Centraliza o mapa
         map.animateCamera(update);
+/*        map.animateCamera(update, 10*1000, new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+                Toast.makeText(getApplicationContext(), "Mapa chegou ao ponto desejado", Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onCancel() {
+                Toast.makeText(getApplicationContext(), "Animação cancelada", Toast.LENGTH_LONG).show();
+            }
+        });*/
 
         // Eventos
 //        map.setOnMapClickListener(this);
