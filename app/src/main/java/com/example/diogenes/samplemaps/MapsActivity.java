@@ -2,6 +2,7 @@ package com.example.diogenes.samplemaps;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.widget.Toast;
@@ -12,8 +13,15 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polygon;
+import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.Map;
 
@@ -43,14 +51,15 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
         // Add a marker
         LatLng fafica = new LatLng(-8.298635, -35.974063);
+        LatLng iterativo = new LatLng(-8.298359, -35.973456);
+//        LatLng marcozero = new LatLng(-8.071709, -34.877724);
 
-//        map.setMyLocationEnabled(true);
-
+        //DETALHES DE INCLINAÇÃO E DIREÇÃO DA CÂMERA
         final CameraPosition position = new CameraPosition.Builder()
                 .target(fafica) 	// Localização
-                .bearing(0)	 	// Direção em que a cÂmera está apontando em graus
+                .bearing(0)	 	    // Direção em que a cÂmera está apontando em graus
                 .tilt(0) 			// Ângulo que a cÂmera está posicionada em graus (0 a 90)
-                .zoom(18) 			// Zoom
+                .zoom(19) 			// Zoom
                 .build();
 
         CameraUpdate update = CameraUpdateFactory.newCameraPosition(position);
@@ -58,6 +67,8 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
         // Centraliza o mapa
         map.animateCamera(update);
+
+        //MANIPULAR EVENTOS NA ANIMAÇÃO DO MAPA
 /*        map.animateCamera(update, 10*1000, new GoogleMap.CancelableCallback() {
             @Override
             public void onFinish() {
@@ -70,6 +81,31 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
             }
         });*/
 
+//        DESENHA UMA LINHA ENTRE DOIS PONTOS
+//        adicionarMarcador(map,fafica);
+
+        //DESENHA UMA LINHA
+//        adicionaLinha(map,fafica,iterativo);
+
+        //DESENHA UM POLÍGONO COM BASE EM 3 PONTOS
+//        adicionaPoligno(map,fafica,iterativo);
+
+        //EVENTO NO MARCADOR
+        /*map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                Toast.makeText(getApplicationContext(),"Evento de click no marcador",Toast.LENGTH_LONG).show();
+                return false;
+            }
+        });
+
+        //EVENTO NA JANELA DO MARCADOR
+        map.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                Toast.makeText(getApplicationContext(),"Evento de click na janela",Toast.LENGTH_LONG).show();
+            }
+        });*/
         // Eventos
 //        map.setOnMapClickListener(this);
     }
@@ -78,5 +114,33 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
     public void onMapClick(LatLng latLng) {
 
     }
+
+    private void adicionarMarcador(GoogleMap googleMap, LatLng latLng){
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(latLng).title("Turma ADS").snippet("Fafica");
+
+        markerOptions.icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher));
+
+        googleMap.addMarker(markerOptions);
+    }
+
+    private void adicionaLinha(GoogleMap googleMap, LatLng marca1, LatLng marca2){
+        PolylineOptions line = new PolylineOptions();
+        line.add(new LatLng(marca1.latitude,marca1.longitude));
+        line.add(new LatLng(marca2.latitude,marca2.longitude));
+        line.color(Color.BLUE);
+        Polyline polyline = googleMap.addPolyline(line);
+    }
+
+    private void adicionaPoligno(GoogleMap googleMap, LatLng marca1, LatLng marca2){
+        PolygonOptions p = new PolygonOptions();
+        p.add(marca1);
+        p.add(marca2);
+        p.add(new LatLng(-8.297540, -35.973760));
+        p.strokeColor(Color.GREEN);
+        Polygon polygon = googleMap.addPolygon(p);
+        polygon.setFillColor(Color.BLUE);
+    }
+
 
 }
