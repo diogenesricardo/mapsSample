@@ -81,14 +81,14 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
             }
         });*/
 
-//        DESENHA UMA LINHA ENTRE DOIS PONTOS
+//        ADICIONAR MARCADOR
 //        adicionarMarcador(map,fafica);
 
-        //DESENHA UMA LINHA
+        //DESENHA UMA LINHA ENTRE DOIS PONTOS
 //        adicionaLinha(map,fafica,iterativo);
 
-        //DESENHA UM POLÍGONO COM BASE EM 3 PONTOS
-//        adicionaPoligno(map,fafica,iterativo);
+        //DESENHA UM POLÍGONO COM BASE EM 3 OU MAIS PONTOS
+        adicionaPoligno(map,fafica,iterativo);
 
         //EVENTO NO MARCADOR
         /*map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
@@ -137,6 +137,7 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         p.add(marca1);
         p.add(marca2);
         p.add(new LatLng(-8.297540, -35.973760));
+        //MAIS PONTOS AQUI
         p.strokeColor(Color.GREEN);
         Polygon polygon = googleMap.addPolygon(p);
         polygon.setFillColor(Color.BLUE);
