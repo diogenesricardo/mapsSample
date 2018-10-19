@@ -2,24 +2,31 @@ package com.example.diogenes.samplemaps;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
+import android.util.JsonReader;
+import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.diogenes.samplemaps.util.PermissionUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -29,22 +36,31 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.DateFormat;
+import java.util.Date;
 
 
-public class MapsActivity extends android.support.v4.app.FragmentActivity implements OnMapClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class MapsActivity extends android.support.v4.app.FragmentActivity implements OnMapClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
     SupportMapFragment mapFragment;
     GoogleApiClient mGoogleApiClient;
     TextView tvMinhaCoordenada;
+    GoogleMap map;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,15 +72,20 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         solicitarPermissoes();
 
         // Configura o objeto GoogleApiClient
-/*        mGoogleApiClient = new GoogleApiClient.Builder(this)
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
-                .build();*/
+                .build();
+        // Método que dispara uma intent para o maps com um rota desejada.
+//        tracarRota();
+
+//        tracarRotaManualmente();
 
         mapFragment.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(GoogleMap googleMap) {
+                map = googleMap;
                 iniciarMapa(googleMap);
             }
         });
@@ -213,8 +234,9 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         LocationServices.getFusedLocationProviderClient(this).getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
             @Override
             public void onSuccess(Location location) {
-                tvMinhaCoordenada.setText("Latitude " + String.valueOf(location.getLatitude())
-                        + " Longitude " + String.valueOf(location.getLongitude()));
+                /*tvMinhaCoordenada.setText("Latitude " + String.valueOf(location.getLatitude())
+                        + " Longitude " + String.valueOf(location.getLongitude()));*/
+                setMapLocation(location);
             }
         });
 
@@ -243,6 +265,8 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 // Conecta no Google Play Services
 // Podemos utilizar qualquer API agora
         Toast.makeText(getBaseContext(), "Conexão ao PlayServices com sucesso", Toast.LENGTH_SHORT).show();
+        // Iniciando o GPS
+        startLocationUpdates();
     }
 
     @Override
@@ -258,4 +282,145 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 // Pode ser configuração inválida ou falta de conectividade no dispositivo
         Toast.makeText(getBaseContext(), "Falha ao conectar serviço", Toast.LENGTH_SHORT).show();
     }
+
+    private void setMapLocation(Location l) {
+        if (map != null && l != null) {
+            LatLng latLng = new LatLng(l.getLatitude(), l.getLongitude());
+            CameraUpdate update = CameraUpdateFactory.newLatLngZoom(latLng, 15);
+            map.animateCamera(update);
+
+            TextView text = findViewById(R.id.lblCurrentLocation);
+            String s = String.format("Última atualização %s", DateFormat.getTimeInstance().format(new Date()));
+            s += String.format("\nLat/Lnt %f/%f, provider: %s", l.getLatitude(), l.getLongitude(), l.getProvider());
+            text.setText(s);
+
+            // Desenha uma bolinha vermelha nos ponto que passou
+            CircleOptions circle = new CircleOptions().center(latLng);
+            circle.fillColor(Color.BLUE);
+            circle.radius(2); // Em metros
+//            map.clear();
+            map.addCircle(circle);
+
+        }
+    }
+
+    protected void startLocationUpdates() {
+        LocationRequest mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(10000);
+        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+//        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        LocationServices.getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest,new LocationCallback(){
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                // Faça alguma coisa qui
+                onLocationChanged(locationResult.getLastLocation());
+            }
+        }, Looper.myLooper());
+    }
+
+    protected void stopLocationUpdates() {
+        LocationServices.getFusedLocationProviderClient(this).removeLocationUpdates(new LocationCallback(){
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                super.onLocationResult(locationResult);
+                // Faça alguma coisa qui
+            }
+        });
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        // New location has now been determined
+        String msg = "Localização atualizada: " +
+                Double.toString(location.getLatitude()) + "," +
+                Double.toString(location.getLongitude());
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+
+        setMapLocation(location);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Para o GPS
+        stopLocationUpdates();
+        // Desconecta do Google.
+        mGoogleApiClient.disconnect();
+    }
+
+    private void tracarRota(){
+        String origem = "-8.304436, -35.983375";
+        String destino = "-8.298635, -35.974063";
+        String url = "http://maps.google.com/maps?f=d&saddr="+origem+"&daddr="+destino+"&hl=pt";
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+    }
+
+    private void tracarRotaManualmente() {
+        String origem = "-8.304436, -35.983375";
+        String destino = "-8.298635, -35.974063";
+        String url = "https://maps.googleapis.com/maps/api/directions/json?origin="+origem+"&destination="+destino
+                +"&sensor=true&mode=driving&key="+R.string.google_maps_key;
+
+        getJsonCoordenadasRotas(url);
+
+    }
+
+    private void getJsonCoordenadasRotas(final String url) {
+
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                // All your networking logic
+                // should be here
+
+                try {
+                    // 01 - Create URL
+                    URL getInsumosURL = new URL(url);
+
+                    // 02 - Create connection
+                    HttpURLConnection myConnection =
+                            (HttpURLConnection) getInsumosURL.openConnection();
+
+                    // 03 - InputStream do corpo da resposta
+                    InputStream responseBody = myConnection.getInputStream();
+
+                    // 04 - Leitor do Stream
+                    InputStreamReader responseBodyReader =
+                            new InputStreamReader(responseBody, "UTF-8");
+
+                    //AUDIO, PDF, IMAGEM
+
+                    // 05 - Leitor de JSON
+                    JsonReader jsonReader = new JsonReader(responseBodyReader);
+
+                    // 06 - Iterar
+                    jsonReader.beginObject();
+
+                    Log.v("Json",jsonReader.toString());
+
+                    // 07 - Fechando o leitor de JSON
+                    jsonReader.close();
+
+                    // 08 - Fechando a conexão
+                    myConnection.disconnect();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+
 }

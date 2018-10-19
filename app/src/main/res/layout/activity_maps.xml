@@ -10,20 +10,35 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="2"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
-        <Button
-            android:id="@+id/btMyLocation"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="getMinhaCoordenada"
-            android:text="Minha coordenada" />
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btMyLocation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="getMinhaCoordenada"
+                android:text="Minha coordenada" />
+
+            <TextView
+                android:id="@+id/lblMinhaCoordenada"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAlignment="center" />
+
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/lblMinhaCoordenada"
-            android:layout_width="wrap_content"
+            android:id="@+id/lblCurrentLocation"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAlignment="center" />
+            android:layout_weight="1" />
 
     </LinearLayout>
 

@@ -1,4 +1,4 @@
-package com.example.diogenes.samplemaps;
+package com.example.diogenes.samplemaps.util;
 
 import android.app.Activity;
 import android.content.pm.PackageManager;
